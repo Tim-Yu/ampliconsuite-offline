@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#BSUB -q short
+#BSUB -P re_gecip_cancer_sarcoma
+#BSUB -J ampsuite_restore
+#BSUB -o logs/ampsuite_restore.%J.out
+#BSUB -e logs/ampsuite_restore.%J.err
+#BSUB -n 2
+#BSUB -R "rusage[mem=4000]"
+#BSUB -W 4:00
+#
+# Download + verify + extract the bundle from GitHub into DEST (default: current directory/ampliconsuite).
+#   mkdir -p /re_gecip/cancer_sarcoma/<project> && cd /re_gecip/cancer_sarcoma/<project> && mkdir -p logs
+#   wget https://github.com/Tim-Yu/ampliconsuite-offline/raw/refs/heads/main/restore/download_and_restore.sh
+#   bsub -env "all,DEST=$PWD/ampliconsuite,WITH_INDEXED=0" < hpc/restore_only.lsf
+set -euo pipefail
+module load singularity/4.1.1 || true
+DEST="${DEST:-$(pwd)/ampliconsuite}"
+OWNER="${OWNER:-Tim-Yu}"
+mkdir -p logs
+if [[ ! -f download_and_restore.sh ]]; then
+  wget -q "https://github.com/${OWNER}/ampliconsuite-offline/raw/refs/heads/main/restore/download_and_restore.sh" -O download_and_restore.sh
+fi
+extra=(); [[ "${WITH_INDEXED:-0}" == "1" ]] && extra+=(--with-indexed)
+bash download_and_restore.sh --owner "$OWNER" --dest "$DEST" "${extra[@]}"

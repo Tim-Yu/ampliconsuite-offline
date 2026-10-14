@@ -1,0 +1,4 @@
+data_repo/GRCh38/file_list.txt
+data_repo/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
+data_repo/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.bwt
+data_repo/GRCh38_indexed_md5sum.txt

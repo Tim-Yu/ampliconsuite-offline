@@ -1,0 +1,2 @@
+archive	type	bytes	sha256	nparts	part_prefix	extract_to
+GRCh38_indexed.tar.gz	data_repo_indexed	4605680909	dc72eba2cccf1ec9fd1070d2452340a6d2e112741f8b3c475085b38457690833	90	GRCh38_indexed.tar.gz.part-	data_repo/

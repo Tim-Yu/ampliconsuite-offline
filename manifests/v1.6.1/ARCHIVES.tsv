@@ -1,0 +1,4 @@
+archive	type	bytes	sha256	nparts	part_prefix	extract_to
+code_payload.tar.gz	code	6149396	eedf8bed67d5b05e204a40d51af24c0b119c72a5fc791bb5ce0e6392c80959c8	1	code_payload.tar.gz.part-	.
+ampliconsuite-pipeline_1.6.1.sif	sif	729837568	37e6b8bd65c53f09c3822fe8f22a07169933834a2db1d183baa8e05e9047b4b8	15	ampliconsuite-pipeline_1.6.1.sif.part-	sif/
+GRCh38.tar.gz	data_repo	1160415041	66709199565c106efbb7cd5b829558fa84fee260806f7aca58584383c3152bfe	23	GRCh38.tar.gz.part-	data_repo/

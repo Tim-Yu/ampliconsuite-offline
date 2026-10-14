@@ -1,0 +1,3 @@
+# sample	tumour_bam	normal_bam (optional)
+CCS_12GP-T	/re_gecip/path/CCS_12GP-T.redux.bam	/re_gecip/path/CCS_12GP-N.redux.bam
+SAMPLE2	/re_gecip/path/SAMPLE2-T.bam	

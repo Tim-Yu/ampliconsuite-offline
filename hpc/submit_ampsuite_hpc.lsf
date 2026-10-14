@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+#BSUB -q medium
+#BSUB -P re_gecip_cancer_sarcoma
+#BSUB -J ampsuite
+#BSUB -o logs/ampsuite.%J.out
+#BSUB -e logs/ampsuite.%J.err
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=32000]"
+#BSUB -n 16
+#BSUB -W 24:00
+#
+# One-sample AmpliconSuite-pipeline run (BAM/CRAM -> CNVkit seeds -> AmpliconArchitect -> AmpliconClassifier).
+# Submit from the directory that holds env_controlled.sh (the restore destination), e.g.
+#   cd /re_gecip/cancer_sarcoma/<project>/ampliconsuite && mkdir -p logs
+#   bsub -env "all,SAMPLE=CCS_12GP-T,BAM=/path/CCS_12GP-T.redux.bam,NORMAL_BAM=/path/CCS_12GP-N.redux.bam" < hpc/submit_ampsuite_hpc.lsf
+# Variables: SAMPLE (required), BAM (required), NORMAL_BAM, OUTDIR (default: ./runs/SAMPLE), THREADS (default: LSB_DJOB_NUMPROC),
+#            REF (default GRCh38), EXTRA_ARGS (e.g. "--cnv_bed seeds.bed" or "--cngain 4.5 --downsample 10")
+set -euo pipefail
+module load singularity/4.1.1
+
+AMPSUITE_ROOT="${AMPSUITE_ROOT:-$(pwd)}"
+[[ -f "$AMPSUITE_ROOT/env_controlled.sh" ]] || { echo "env_controlled.sh not found in $AMPSUITE_ROOT; run the restore first (hpc/restore_only.lsf)"; exit 1; }
+# shellcheck disable=SC1091
+source "$AMPSUITE_ROOT/env_controlled.sh"
+
+: "${SAMPLE:?set SAMPLE}"; : "${BAM:?set BAM}"
+THREADS="${THREADS:-${LSB_DJOB_NUMPROC:-16}}"
+OUTDIR="${OUTDIR:-$AMPSUITE_ROOT/runs/$SAMPLE}"
+REF="${REF:-GRCh38}"
+mkdir -p "$OUTDIR" logs
+args=(-s "$SAMPLE" -t "$THREADS" --bam "$BAM" --ref "$REF" --run_AA --run_AC -o "$OUTDIR")
+[[ -n "${NORMAL_BAM:-}" ]] && args+=(--normal_bam "$NORMAL_BAM")
+# shellcheck disable=SC2206
+[[ -n "${EXTRA_ARGS:-}" ]] && args+=(${EXTRA_ARGS})
+
+echo "[$(date)] run_ampsuite.sh ${args[*]}"
+run_ampsuite.sh "${args[@]}"
+echo "[$(date)] done -> $OUTDIR"

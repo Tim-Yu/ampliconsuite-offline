@@ -1,0 +1,2 @@
+Optional BWA-indexed GRCh38 data repo (FASTQ input only). Fetched by download_and_restore.sh --with-indexed from
+  https://github.com/Tim-Yu/ampliconsuite-offline-parts/raw/refs/heads/payload-v1.6.1/packages/ampliconsuite/v1.6.1-indexed

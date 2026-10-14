@@ -1,0 +1,17 @@
+sif/ampliconsuite-pipeline_1.6.1.sif
+data_repo/GRCh38/file_list.txt
+data_repo/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa
+data_repo/GRCh38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa.fai
+data_repo/GRCh38_md5sum.txt
+bin/run_ampsuite.sh
+bin/prepare_cram_cache.sh
+bin/purple_to_aa_bed.sh
+hpc/submit_ampsuite_hpc.lsf
+hpc/submit_ampsuite_array.lsf
+restore/download_and_restore.sh
+upstream/AmpliconSuite-pipeline-v1.6.1/AmpliconSuite-pipeline.py
+upstream/AmpliconSuite-pipeline-v1.6.1/test_outputs/GBM39_FF-8.tar.gz
+LICENSES/LICENSE-AmpliconArchitect.txt
+LICENSES/LICENSE-AmpliconSuite-pipeline.txt
+README.md
+docs/VERSIONS.txt

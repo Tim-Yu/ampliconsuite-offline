@@ -1,0 +1,109 @@
+Bootstrap: library
+From: ubuntu:22.04
+Stage: build
+
+%files
+# copy files in
+requirements/requirements.txt home/requirements/requirements.txt
+internal_singularity_script.sh /home/
+internal_singularity_ga_script.sh /home/
+
+%post
+# set timezone to UTC
+ln -s /usr/share/zoneinfo/UTC /etc/localtime
+
+SAMTOOLS_VERSION=1.21
+
+
+# stuff in the container
+mkdir -p /home/requirements
+mkdir -p /home/programs
+mkdir -p /home/output
+mkdir -p /home/input
+mkdir -p /home/mosek
+mkdir -p /home/gurobi
+touch /home/gurobi/gurobi.lic
+mkdir -p /home/data_repo
+mkdir -p /tmp/.config/matplotlib
+
+chmod a+rwx /tmp/.config/matplotlib
+
+apt-get update && apt-get install -y
+
+echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
+
+DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing --no-install-recommends \
+bcftools \
+bedtools \
+bzip2 \
+build-essential \
+bwa \
+ca-certificates \
+curl \
+fontconfig \
+gfortran \
+libbz2-dev \
+libcurl4-openssl-dev \
+liblzma-dev \
+libncurses-dev \
+libssl-dev \
+python3-dev \
+ttf-mscorefonts-installer \
+unzip \
+wget \
+zlib1g-dev
+
+wget -q "https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2" -O /tmp/samtools.tar.bz2
+tar -xjf /tmp/samtools.tar.bz2 -C /tmp
+cd "/tmp/samtools-${SAMTOOLS_VERSION}"
+./configure --prefix=/usr/local
+make -j2
+make install
+cd /
+rm -rf "/tmp/samtools-${SAMTOOLS_VERSION}" /tmp/samtools.tar.bz2
+samtools --version
+python3 -c 'import re, subprocess; v = subprocess.check_output(["samtools", "--version"]).decode(errors="replace").splitlines()[0]; m = re.match(r"samtools (\d+)\.(\d+)", v); assert m and tuple(map(int, m.groups())) >= (1, 21), "Container requires samtools >=1.21: " + v'
+
+fc-cache -f
+
+ln -s /usr/bin/python3 /usr/bin/python
+python --version
+
+apt-get install -y python3-pip --no-install-recommends
+pip3 install --upgrade pip
+pip3 install --no-cache-dir -r /home/requirements/requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+pip3 show intervaltree
+
+apt-get install -y r-base-core --no-install-recommends
+Rscript -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")'
+Rscript -e 'BiocManager::install("DNAcopy")'
+
+cnvkit.py version
+cp `which cnvkit.py` /home/programs/cnvkit.py
+
+echo export AA_DATA_REPO=/home/data_repo >> ~/.bashrc
+echo export AA_SRC=/home/programs/AmpliconArchitect-master/src >> ~/.bashrc
+echo export AC_SRC=/home/programs/AmpliconClassifier-main >> ~/.bashrc
+
+wget https://github.com/AmpliconSuite/AmpliconArchitect/archive/master.zip -P /home/programs
+cd /home/programs && unzip master.zip && rm master.zip
+wget https://github.com/AmpliconSuite/AmpliconClassifier/archive/main.zip -P /home/programs
+cd /home/programs && unzip main.zip && rm main.zip
+wget https://github.com/AmpliconSuite/AmpliconSuite-pipeline/archive/master.zip -P /home/programs
+cd /home/programs && unzip master.zip && rm master.zip
+
+chmod a+rwx /home -R
+
+%environment
+export AA_DATA_REPO=/home/data_repo
+export AA_SRC=/home/programs/AmpliconArchitect-master/src
+export AC_SRC=/home/programs/AmpliconClassifier-main
+export MOSEKLM_LICENSE_FILE=/home/mosek/
+export MPLCONFIGDIR=/tmp/.config/matplotlib
+# Containers default to skipping the online data-repo freshness check (no outbound network assumed).
+export AS_NO_REPO_CHECK=1
+
+
+%test
+python3 -c 'import re, subprocess; v = subprocess.check_output(["samtools", "--version"]).decode(errors="replace").splitlines()[0]; m = re.match(r"samtools (\d+)\.(\d+)", v); assert m and tuple(map(int, m.groups())) >= (1, 21), "Container requires samtools >=1.21: " + v'
+ls /home/programs

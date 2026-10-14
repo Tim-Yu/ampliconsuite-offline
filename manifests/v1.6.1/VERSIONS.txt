@@ -1,0 +1,23 @@
+AmpliconSuite offline bundle v1.6.1   packed 2026-10-14T11:29:56Z on pillay-lab-server
+AmpliconSuite-pipeline: tag v1.6.1  commit cd822b91e00a65fec5aabe9989a29bdde084ecc4  https://github.com/AmpliconSuite/AmpliconSuite-pipeline
+Container source: docker://jluebeck/ampliconsuite-pipeline:1.6.1  (docker tag 1.6.1 manifest digest: sha256:8cb02966f8dde795fb8694d40a4f3d5c2aa73d295ca3c2595755f1e6370e95f9)
+SIF: ampliconsuite-pipeline_1.6.1.sif  bytes 729837568  sha256 37e6b8bd65c53f09c3822fe8f22a07169933834a2db1d183baa8e05e9047b4b8  built with singularity version 3.8.4
+Inside the image:
+  samtools: samtools 1.21
+  bwa: Version: 0.7.17-r1188
+  bedtools: bedtools v2.30.0
+  cnvkit: 0.9.13
+  R: R scripting front-end version 4.1.2 (2021-11-01)
+  AmpliconSuite-pipeline: AmpliconSuite-pipeline version 1.6.1
+  AA: AmpliconArchitect version 1.6.r1
+  AC: 2.0.0
+  python: mosek (10, 0, 38) clarabel 0.11.1 pysam 0.23.3
+  seq_cache_populate.pl: /usr/local/bin/seq_cache_populate.pl
+Data repo GRCh38: GRCh38.tar.gz  bytes 1160415041  md5 2bcd1fdaed027466ed296bf78b2907eb  (upstream build date: Fri Jun 26 07:56:02 PM PDT 2026)
+Data repo GRCh38_indexed: GRCh38_indexed.tar.gz  bytes 4605680909  md5 e38075af9f1b6358370403757543635c
+Data repo source: https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/
+Bundle scripts:
+  prepare_cram_cache.sh  sha256 0be87180143f04f4b7d0d36034e51abf9acc8eb89cc1307d95b54932d4c42794
+  purple_to_aa_bed.sh  sha256 dea942ee3a0edb825172a777ec0c57dce63d89a9f3c4696d485df26ce8d93e66
+  run_ampsuite.sh  sha256 08216a414b3956b683e9335f1ead3e0d3f1f8d967cb167a97c14ca85a7fbb75b
+  download_and_restore.sh  sha256 6c11d25dba96130e6cb0e8baadf7f8fd3c6a295b70e580b62345d8075042a84f
