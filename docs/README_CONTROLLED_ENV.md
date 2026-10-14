@@ -73,7 +73,9 @@ Note that PURPLE CN is purity-adjusted while CNVkit's is not, so low-purity samp
 ### CRAM input
 See the add-on repository `ampliconsuite-offline-cram-addon`. In short: build the reference cache once from the local
 FASTA the CRAMs were aligned to (`prepare_cram_cache.sh --fasta ... --cache $AMPSUITE_ROOT/cram_ref_cache`), export
-`REF_CACHE="$AMPSUITE_ROOT/cram_ref_cache/%2s/%2s/%s"`, then pass the `.cram` to `--bam` as usual.
+`REF_CACHE="$AMPSUITE_ROOT/cram_ref_cache/%2s/%2s/%s"`, then pass the `.cram` to `--bam` as usual. Decoding CRAM makes the
+CNVkit and seed-filtering stages several times slower than with BAM (measured 15 min vs 4 min on the GBM39 test), so use
+BAMs when both exist.
 
 ## Licences (research use)
 See `LICENSES/README.md`. AmpliconSuite-pipeline, AmpliconClassifier (BSD-2) and BFBArchitect (BSD-3) are permissive.
