@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+#BSUB -q short
+#BSUB -P re_gecip_cancer_sarcoma
+#BSUB -J ampsuite_cohort
+#BSUB -o logs/ampsuite_cohort.%J.out
+#BSUB -e logs/ampsuite_cohort.%J.err
+#BSUB -R "rusage[mem=16000]"
+#BSUB -n 4
+#BSUB -W 4:00
+#
+# Cohort-level AmpliconClassifier table over all finished tumours of the sample sheet, PatientID joined in.
+#   bash hpc/ampsuite_cohort_classify.lsf /path/sample_sheet.tsv [outdir_root] [cohort_name]   (submits itself)
+# Copies the *_AA_results folders first (AC deletes classification folders inside the directory it is given),
+# so <outdir_root>/<TumourID>/ stays untouched. Output: <restore dest>/<cohort>_classification/<cohort>_result_table_with_patient.tsv
+set -euo pipefail
+AMPSUITE_ROOT="${AMPSUITE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+# shellcheck disable=SC1091
+source "$AMPSUITE_ROOT/hpc/sheet_lib.sh"
+if [[ -z "${LSB_JOBID:-}" ]]; then
+  SHEET="${1:-${SHEET:-}}"; RUNS_ROOT="${2:-${RUNS_ROOT:-$AMPSUITE_ROOT/runs}}"; COHORT="${3:-${COHORT:-cohort}}"
+  [[ -n "$SHEET" && -f "$SHEET" ]] || { echo "usage: bash $0 /path/sample_sheet.tsv [runs_root] [cohort_name]" >&2; exit 1; }
+  SHEET="$(realpath "$SHEET")"; RUNS_ROOT="$(realpath "$RUNS_ROOT")"; mkdir -p "$AMPSUITE_ROOT/logs"; cd "$AMPSUITE_ROOT"
+  n=0; while IFS= read -r row; do tid="$(sheet_field "$row" 1)"; [[ -f "$RUNS_ROOT/$tid/${tid}_finish_flag.txt" ]] && n=$((n+1)); done < <(sheet_rows "$SHEET")
+  echo "$n of $(sheet_count "$SHEET") tumours finished under $RUNS_ROOT; submitting cohort classification '$COHORT'"
+  bsub -env "all,SHEET=$SHEET,RUNS_ROOT=$RUNS_ROOT,COHORT=$COHORT,AMPSUITE_ROOT=$AMPSUITE_ROOT,REF=${REF:-GRCh38}" < "${BASH_SOURCE[0]}"; exit 0
+fi
+type module >/dev/null 2>&1 && module load singularity/4.1.1
+# shellcheck disable=SC1091
+source "$AMPSUITE_ROOT/env_controlled.sh"
+: "${SHEET:?}"; RUNS_ROOT="${RUNS_ROOT:-$AMPSUITE_ROOT/runs}"; COHORT="${COHORT:-cohort}"
+OUT="${OUTDIR:-$AMPSUITE_ROOT/${COHORT}_classification}"; IN="$OUT/aa_results_copy"; rm -rf "$IN"; mkdir -p "$IN"
+n=0; missing=()
+while IFS= read -r row; do
+  tid="$(sheet_field "$row" 1)"; d="$RUNS_ROOT/$tid/${tid}_AA_results"
+  if [[ -d "$d" && -f "$RUNS_ROOT/$tid/${tid}_finish_flag.txt" ]]; then cp -r "$d" "$IN/"; n=$((n+1)); else missing+=("$tid"); fi
+done < <(sheet_rows "$SHEET")
+echo "[$(date)] $n finished tumours collected; missing/unfinished: ${missing[*]:-none}"
+[[ $n -gt 0 ]] || { echo "nothing to classify"; exit 1; }
+run_ampsuite.sh -s "$COHORT" -t "${LSB_DJOB_NUMPROC:-4}" --ref "${REF:-GRCh38}" --run_AC --completed_AA_runs "$IN" -o "$OUT"
+T="$OUT/${COHORT}_classification/${COHORT}_result_table.tsv"
+awk -F'\t' -v OFS='\t' 'NR==FNR { pid[$1]=$4; next } FNR==1 { print "PatientID", $0; next } { print (($1 in pid) ? pid[$1] : "NA"), $0 }' \
+  <(sheet_rows "$SHEET") "$T" > "$OUT/${COHORT}_result_table_with_patient.tsv"
+echo "[$(date)] cohort table: $OUT/${COHORT}_result_table_with_patient.tsv ($(($(wc -l < "$T") - 1)) amplicon rows)"

@@ -7,7 +7,9 @@ bin/run_ampsuite.sh
 bin/prepare_cram_cache.sh
 bin/purple_to_aa_bed.sh
 hpc/submit_ampsuite_hpc.lsf
-hpc/submit_ampsuite_array.lsf
+hpc/ampsuite_cohort.lsf
+hpc/ampsuite_cohort_classify.lsf
+hpc/sheet_lib.sh
 restore/download_and_restore.sh
 upstream/AmpliconSuite-pipeline-v1.6.1/AmpliconSuite-pipeline.py
 upstream/AmpliconSuite-pipeline-v1.6.1/test_outputs/GBM39_FF-8.tar.gz

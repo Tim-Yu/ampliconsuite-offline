@@ -59,8 +59,21 @@ run_ampsuite.sh -s SAMPLE -t 16 --bam /path/SAMPLE-T.redux.bam --normal_bam /pat
 - Expect roughly 1-3 h per 100x WGS tumour on 16 threads; runtime is dominated by reading the BAM (QC + CNVkit) and by
   the number of amplicons.
 
-LSF: `hpc/submit_ampsuite_hpc.lsf` (one sample via `bsub -env`) and `hpc/submit_ampsuite_array.lsf` (job array over a
-`samples.tsv`). Both `module load singularity/4.1.1`, source `env_controlled.sh` and call `run_ampsuite.sh`.
+### Running a cohort from the sample sheet
+The sheet is a tab- (or comma-) separated file with a header line and the columns `PatientID`, `TumourID`,
+`Tumour_BAM`, `Normal_BAM` (any column order; `Normal_BAM` may be empty; Windows line endings are fine; see
+`hpc/sample_sheet.example.tsv`). One row per tumour; normals may be shared between rows. One bsub script takes it:
+```bash
+cd /path/ampliconsuite                                   # the restore destination (holds env_controlled.sh)
+bash hpc/ampsuite_cohort.lsf /path/sample_sheet.tsv      # checks every BAM, then submits itself as array ampsuite[1-N]
+#   one element per tumour (16 cores, 32 GB, 24 h) -> runs/<TumourID>/<TumourID>_classification/<TumourID>_result_table.tsv
+bash hpc/ampsuite_cohort_classify.lsf /path/sample_sheet.tsv   # after the array: one cohort table with PatientID
+#   -> cohort_classification/cohort_result_table_with_patient.tsv
+```
+Optional second argument = output root (default `runs/`); optional env before the command: `REF=GRCh38`,
+`EXTRA_ARGS="--no_QC"`. Rerun one failed element: `bsub -J "ampsuite[7]" -env "all,SHEET=/path/sample_sheet.tsv,AMPSUITE_ROOT=$PWD" < hpc/ampsuite_cohort.lsf`.
+Single samples: `hpc/submit_ampsuite_hpc.lsf` (`bsub -env "all,SAMPLE=...,BAM=...,NORMAL_BAM=..."`). All templates
+`module load singularity/4.1.1`, source `env_controlled.sh` and call `run_ampsuite.sh`.
 
 ### Using PURPLE copy number as seeds (optional)
 If oncoanalyser/PURPLE output exists, you can skip CNVkit and seed AA from PURPLE's purity-corrected copy number:

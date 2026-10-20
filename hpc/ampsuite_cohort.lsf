@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+#BSUB -q medium
+#BSUB -P re_gecip_cancer_sarcoma
+#BSUB -J ampsuite[1-1]
+#BSUB -o logs/ampsuite.%J.%I.out
+#BSUB -e logs/ampsuite.%J.%I.err
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem=32000]"
+#BSUB -n 16
+#BSUB -W 24:00
+#
+# AmpliconSuite on a whole cohort from the sample sheet (header: PatientID, TumourID, Tumour_BAM, Normal_BAM;
+# tab or comma separated). ONE file, two modes:
+#   on the login node:  bash hpc/ampsuite_cohort.lsf /path/sample_sheet.tsv [outdir_root]
+#        -> checks every BAM, then submits THIS file as an LSF array "ampsuite[1-N]" (one element per tumour)
+#   inside LSF:         each array element processes row $LSB_JOBINDEX of the sheet with run_ampsuite.sh
+# Results: <outdir_root>/<TumourID>/ (default <restore dest>/runs/<TumourID>/); afterwards run
+#   bash hpc/ampsuite_cohort_classify.lsf /path/sample_sheet.tsv [outdir_root]   for one cohort-level table.
+# Optional env at submission: REF (GRCh38), EXTRA_ARGS (e.g. "--no_QC"), THREADS.
+set -euo pipefail
+AMPSUITE_ROOT="${AMPSUITE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+# shellcheck disable=SC1091
+source "$AMPSUITE_ROOT/hpc/sheet_lib.sh"
+
+if [[ -z "${LSB_JOBID:-}" ]]; then
+  # ---------------- submit mode (login node) ----------------
+  SHEET="${1:-${SHEET:-}}"; OUTDIR_ROOT="${2:-${OUTDIR_ROOT:-$AMPSUITE_ROOT/runs}}"
+  [[ -n "$SHEET" && -f "$SHEET" ]] || { echo "usage: bash $0 /path/sample_sheet.tsv [outdir_root]" >&2; exit 1; }
+  SHEET="$(realpath "$SHEET")"; mkdir -p "$OUTDIR_ROOT" "$AMPSUITE_ROOT/logs"; OUTDIR_ROOT="$(realpath "$OUTDIR_ROOT")"
+  N="$(sheet_count "$SHEET")"; echo "sheet: $SHEET ($N tumours) -> $OUTDIR_ROOT"; bad=0
+  while IFS= read -r row; do
+    tid="$(sheet_field "$row" 1)"; tbam="$(sheet_field "$row" 2)"; nbam="$(sheet_field "$row" 3)"; pid="$(sheet_field "$row" 4)"; st="ok"
+    [[ -f "$tbam" ]] || { st="MISSING tumour BAM $tbam"; bad=1; }
+    [[ -z "$nbam" || -f "$nbam" ]] || { st="MISSING normal BAM $nbam"; bad=1; }
+    [[ -f "$tbam" && ! -f "$tbam.bai" && ! -f "${tbam%.bam}.bai" ]] && st="$st (no .bai index)"
+    [[ -z "$nbam" ]] && st="$st (no normal: CNVkit uses the built-in reference)"
+    [[ -f "$OUTDIR_ROOT/$tid/${tid}_finish_flag.txt" ]] && st="$st (already finished, will be rerun)"
+    printf '  %-12s %-24s %s\n' "$pid" "$tid" "$st"
+  done < <(sheet_rows "$SHEET")
+  [[ $bad -eq 0 ]] || { echo "ERROR: fix the missing files above, then resubmit" >&2; exit 1; }
+  cd "$AMPSUITE_ROOT"
+  echo "submitting: bsub -J ampsuite[1-$N] < $0"
+  bsub -J "ampsuite[1-$N]" -env "all,SHEET=$SHEET,OUTDIR_ROOT=$OUTDIR_ROOT,AMPSUITE_ROOT=$AMPSUITE_ROOT,REF=${REF:-GRCh38},EXTRA_ARGS=${EXTRA_ARGS:-},THREADS=${THREADS:-}" < "${BASH_SOURCE[0]}"
+  exit 0
+fi
+
+# ---------------- run mode (one array element) ----------------
+type module >/dev/null 2>&1 && module load singularity/4.1.1
+# shellcheck disable=SC1091
+source "$AMPSUITE_ROOT/env_controlled.sh"
+: "${SHEET:?SHEET not set}"; OUTDIR_ROOT="${OUTDIR_ROOT:-$AMPSUITE_ROOT/runs}"
+row="$(sheet_row "$SHEET" "${LSB_JOBINDEX:-1}")"; [[ -n "$row" ]] || { echo "no row ${LSB_JOBINDEX:-1} in $SHEET"; exit 1; }
+TUMOUR_ID="$(sheet_field "$row" 1)"; TUMOUR_BAM="$(sheet_field "$row" 2)"; NORMAL_BAM="$(sheet_field "$row" 3)"; PATIENT_ID="$(sheet_field "$row" 4)"
+OUTDIR="$OUTDIR_ROOT/$TUMOUR_ID"; mkdir -p "$OUTDIR"
+printf 'PatientID\t%s\nTumourID\t%s\nTumour_BAM\t%s\nNormal_BAM\t%s\n' "$PATIENT_ID" "$TUMOUR_ID" "$TUMOUR_BAM" "$NORMAL_BAM" > "$OUTDIR/sample_info.tsv"
+args=(-s "$TUMOUR_ID" -t "${THREADS:-${LSB_DJOB_NUMPROC:-16}}" --bam "$TUMOUR_BAM" --ref "${REF:-GRCh38}" --run_AA --run_AC -o "$OUTDIR")
+[[ -n "$NORMAL_BAM" ]] && args+=(--normal_bam "$NORMAL_BAM")
+# shellcheck disable=SC2206
+[[ -n "${EXTRA_ARGS:-}" ]] && args+=(${EXTRA_ARGS})
+echo "[$(date)] element ${LSB_JOBINDEX:-1}: patient $PATIENT_ID tumour $TUMOUR_ID"; echo "[$(date)] run_ampsuite.sh ${args[*]}"
+run_ampsuite.sh "${args[@]}"
+echo "[$(date)] done -> $OUTDIR"

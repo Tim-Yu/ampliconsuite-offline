@@ -1,0 +1,3 @@
+PatientID	TumourID	Tumour_BAM	Normal_BAM
+215000789	LP3001502-DNA_C03	/nas/weka.gel.zone/re_gecip/cancer_sarcoma/32.TERT_project/32.1.Oncoanalyser/32.1.0.Data/32.1.0.0.bams/LP3001502-DNA_C03_final_dedup.bam	/nas/weka.gel.zone/re_gecip/cancer_sarcoma/32.TERT_project/32.1.Oncoanalyser/32.1.0.Data/32.1.0.0.bams/LP3001491-DNA_A09_final_dedup.bam
+215002180	LP3001100-DNA_B09	/nas/weka.gel.zone/.../LP3001100-DNA_B09_final_dedup.bam	/nas/weka.gel.zone/.../LP3001152-DNA_C10_final_dedup.bam

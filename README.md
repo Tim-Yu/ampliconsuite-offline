@@ -22,7 +22,7 @@ Full documentation: [`docs/README_CONTROLLED_ENV.md`](docs/README_CONTROLLED_ENV
 |---|---|
 | `restore/download_and_restore.sh` | bash-only downloader/verifier/extractor (resumable) |
 | `bin/` | `run_ampsuite.sh` launcher, `prepare_cram_cache.sh`, `purple_to_aa_bed.sh` |
-| `hpc/` | LSF templates (`submit_ampsuite_hpc.lsf`, `submit_ampsuite_array.lsf`, `restore_only.lsf`) |
+| `hpc/` | LSF templates: `ampsuite_cohort.lsf` (self-submitting array over the sample sheet), `ampsuite_cohort_classify.lsf` (cohort table), `submit_ampsuite_hpc.lsf` (single sample), `restore_only.lsf` |
 | `manifests/<version>/` | MANIFEST.tsv, CHECKSUMS.sha256, ARCHIVES.tsv, ARCHIVES.sha256, REQUIRED_FILES.txt, VERSIONS.txt of each payload |
 | `upstream/AmpliconSuite-pipeline-v1.6.1/` | vendored upstream source at the pinned tag (BSD-2), incl. `test_outputs/` for a smoke test |
 | `LICENSES/` | licences of all redistributed components |
