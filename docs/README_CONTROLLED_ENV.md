@@ -40,6 +40,15 @@ run_ampsuite.sh -s smoke -t 2 --ref GRCh38 --run_AC --completed_AA_runs $AMPSUIT
 cut -f2,4,7,8 $AMPSUITE_ROOT/smoke_test/out/smoke_classification/smoke_result_table.tsv   # expect 3 rows: Linear, ecDNA (EGFR), Linear
 ```
 
+## Updating an existing restore (scripts and docs only)
+```bash
+wget https://github.com/Tim-Yu/ampliconsuite-offline/raw/refs/heads/main/restore/update_bundle.sh
+bash update_bundle.sh --dest /path/to/restored/bundle          # add --dry-run to list what would change
+```
+Fetches the bootstrap file list (`FILES.txt`) and replaces only files whose checksum differs (bin/, hpc/, docs/,
+restore/, example data, licences, upstream source). The image, reference data and your runs are not touched. A new
+image or data version is announced by a new payload branch and needs a full `download_and_restore.sh`.
+
 ## Run
 ```bash
 source /path/ampliconsuite/env_controlled.sh
