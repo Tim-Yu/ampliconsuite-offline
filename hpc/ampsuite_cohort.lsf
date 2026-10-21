@@ -16,7 +16,8 @@
 #   inside LSF:         each array element processes row $LSB_JOBINDEX of the sheet with run_ampsuite.sh
 # Results: <outdir_root>/<TumourID>/ (default <restore dest>/runs/<TumourID>/); afterwards run
 #   bash hpc/ampsuite_cohort_classify.lsf /path/sample_sheet.tsv [outdir_root]   for one cohort-level table.
-# Optional env at submission: REF (GRCh38), EXTRA_ARGS (e.g. "--no_QC"), THREADS.
+# Optional env at submission: QUEUE (medium) and WALLTIME (24:00), e.g. QUEUE=short WALLTIME=4:00 bash hpc/ampsuite_cohort.lsf sheet.tsv;
+#   REF (GRCh38), EXTRA_ARGS (e.g. "--no_QC"), THREADS; DRY_RUN=1 prints the bsub command instead of submitting.
 set -euo pipefail
 AMPSUITE_ROOT="${AMPSUITE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck disable=SC1091
@@ -39,8 +40,8 @@ if [[ -z "${LSB_JOBID:-}" ]]; then
   done < <(sheet_rows "$SHEET")
   [[ $bad -eq 0 ]] || { echo "ERROR: fix the missing files above, then resubmit" >&2; exit 1; }
   cd "$AMPSUITE_ROOT"
-  echo "submitting: bsub -J ampsuite[1-$N] < $0"
-  bsub -J "ampsuite[1-$N]" -env "all,SHEET=$SHEET,OUTDIR_ROOT=$OUTDIR_ROOT,AMPSUITE_ROOT=$AMPSUITE_ROOT,REF=${REF:-GRCh38},EXTRA_ARGS=${EXTRA_ARGS:-},THREADS=${THREADS:-}" < "${BASH_SOURCE[0]}"
+  export SHEET OUTDIR_ROOT AMPSUITE_ROOT REF EXTRA_ARGS THREADS
+  lsf_submit "${QUEUE:-medium}" "${WALLTIME:-24:00}" "$(lsf_env SHEET OUTDIR_ROOT AMPSUITE_ROOT REF EXTRA_ARGS THREADS)" "${BASH_SOURCE[0]}" -J "ampsuite[1-$N]"
   exit 0
 fi
 

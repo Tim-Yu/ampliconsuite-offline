@@ -22,3 +22,11 @@ sheet_rows() {
 sheet_row() { sheet_rows "$1" | sed -n "${2}p"; }
 sheet_count() { sheet_rows "$1" | wc -l; }
 sheet_field() { printf '%s\n' "$1" | cut -f"$2"; }
+# lsf_env VAR... -> "all,VAR=value,..." for every named variable that is set and non-empty (LSF rejects empty
+#                   assignments such as "EXTRA_ARGS=" with "invalid syntax for option -env"); values must not contain commas
+lsf_env() { local s="all" v; for v in "$@"; do [[ -n "${!v:-}" ]] && s+=",$v=${!v}"; done; printf '%s' "$s"; }
+# lsf_submit QUEUE WALLTIME ENVSTRING FILE [extra bsub args...] -> submits FILE (or prints the command when DRY_RUN=1)
+lsf_submit() { local q="$1" w="$2" env="$3" file="$4"; shift 4
+  echo "bsub -q $q -W $w $* -env \"$env\" < $file"
+  [[ "${DRY_RUN:-0}" == "1" ]] && { echo "(DRY_RUN=1: not submitted)"; return 0; }
+  bsub -q "$q" -W "$w" "$@" -env "$env" < "$file"; }

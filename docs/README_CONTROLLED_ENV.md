@@ -79,8 +79,10 @@ bash hpc/ampsuite_cohort.lsf /path/sample_sheet.tsv      # checks every BAM, the
 bash hpc/ampsuite_cohort_classify.lsf /path/sample_sheet.tsv   # after the array: one cohort table with PatientID
 #   -> cohort_classification/cohort_result_table_with_patient.tsv
 ```
-Optional second argument = output root (default `runs/`); optional env before the command: `REF=GRCh38`,
-`EXTRA_ARGS="--no_QC"`. Rerun one failed element: `bsub -J "ampsuite[7]" -env "all,SHEET=/path/sample_sheet.tsv,AMPSUITE_ROOT=$PWD" < hpc/ampsuite_cohort.lsf`.
+Optional second argument = output root (default `runs/`); optional env before the command: `QUEUE=short WALLTIME=4:00`
+(default `medium` / `24:00`; a 100x tumour + normal took 72 min here with slow I/O, but AmpliconArchitect time grows with
+the number of amplicons, so use `short` only after a test on your largest BAM finishes well inside 4 h), `REF=GRCh38`,
+`EXTRA_ARGS="--no_QC"`, `DRY_RUN=1` (print the bsub command only). Rerun one failed element: `bsub -J "ampsuite[7]" -env "all,SHEET=/path/sample_sheet.tsv,AMPSUITE_ROOT=$PWD" < hpc/ampsuite_cohort.lsf`.
 Single samples: `hpc/submit_ampsuite_hpc.lsf` (`bsub -env "all,SAMPLE=...,BAM=...,NORMAL_BAM=..."`). All templates
 `module load singularity/4.1.1`, source `env_controlled.sh` and call `run_ampsuite.sh`.
 

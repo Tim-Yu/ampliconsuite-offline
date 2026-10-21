@@ -22,7 +22,8 @@ if [[ -z "${LSB_JOBID:-}" ]]; then
   SHEET="$(realpath "$SHEET")"; RUNS_ROOT="$(realpath "$RUNS_ROOT")"; mkdir -p "$AMPSUITE_ROOT/logs"; cd "$AMPSUITE_ROOT"
   n=0; while IFS= read -r row; do tid="$(sheet_field "$row" 1)"; [[ -f "$RUNS_ROOT/$tid/${tid}_finish_flag.txt" ]] && n=$((n+1)); done < <(sheet_rows "$SHEET")
   echo "$n of $(sheet_count "$SHEET") tumours finished under $RUNS_ROOT; submitting cohort classification '$COHORT'"
-  bsub -env "all,SHEET=$SHEET,RUNS_ROOT=$RUNS_ROOT,COHORT=$COHORT,AMPSUITE_ROOT=$AMPSUITE_ROOT,REF=${REF:-GRCh38}" < "${BASH_SOURCE[0]}"; exit 0
+  export SHEET RUNS_ROOT COHORT AMPSUITE_ROOT REF
+  lsf_submit "${QUEUE:-short}" "${WALLTIME:-4:00}" "$(lsf_env SHEET RUNS_ROOT COHORT AMPSUITE_ROOT REF)" "${BASH_SOURCE[0]}"; exit 0
 fi
 type module >/dev/null 2>&1 && module load singularity/4.1.1
 # shellcheck disable=SC1091

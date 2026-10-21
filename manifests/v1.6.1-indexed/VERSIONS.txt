@@ -1,4 +1,4 @@
-AmpliconSuite offline bundle v1.6.1   packed 2026-10-21T09:28:08Z on pillay-lab-server
+AmpliconSuite offline bundle v1.6.1   packed 2026-10-21T10:37:22Z on pillay-lab-server
 AmpliconSuite-pipeline: tag v1.6.1  commit cd822b91e00a65fec5aabe9989a29bdde084ecc4  https://github.com/AmpliconSuite/AmpliconSuite-pipeline
 Container source: docker://jluebeck/ampliconsuite-pipeline:1.6.1  (docker tag 1.6.1 manifest digest: sha256:8cb02966f8dde795fb8694d40a4f3d5c2aa73d295ca3c2595755f1e6370e95f9)
 SIF: ampliconsuite-pipeline_1.6.1.sif  bytes 729837568  sha256 37e6b8bd65c53f09c3822fe8f22a07169933834a2db1d183baa8e05e9047b4b8  built with singularity version 3.8.4
