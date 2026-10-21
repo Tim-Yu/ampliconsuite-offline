@@ -30,6 +30,7 @@ manifests/v1.6.1/REQUIRED_FILES.txt
 manifests/v1.6.1/RESTORE_HINT.txt
 manifests/v1.6.1/VERSIONS.txt
 restore/download_and_restore.sh
+restore/update_bundle.sh
 upstream/AmpliconSuite-pipeline-v1.6.1/.gitignore
 upstream/AmpliconSuite-pipeline-v1.6.1/AmpliconSuite-pipeline.py
 upstream/AmpliconSuite-pipeline-v1.6.1/CITATIONS.md
