@@ -6,7 +6,9 @@ data_repo/GRCh38_md5sum.txt
 bin/run_ampsuite.sh
 bin/prepare_cram_cache.sh
 bin/purple_to_aa_bed.sh
+bin/cram_reference_info.sh
 hpc/submit_ampsuite_hpc.lsf
+hpc/build_cram_cache.lsf
 hpc/ampsuite_cohort.lsf
 hpc/ampsuite_cohort_classify.lsf
 hpc/sheet_lib.sh

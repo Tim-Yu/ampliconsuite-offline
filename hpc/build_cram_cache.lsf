@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+#BSUB -q short
+#BSUB -P re_gecip_cancer_sarcoma
+#BSUB -J ampsuite_cram_cache
+#BSUB -o logs/cram_cache.%J.out
+#BSUB -e logs/cram_cache.%J.err
+#BSUB -n 2
+#BSUB -R "rusage[mem=8000]"
+#BSUB -W 4:00
+#
+# One-off: build the htslib reference cache that lets the image decode CRAMs offline, from the LOCAL reference FASTA the
+# CRAMs were aligned to (the sequences must match the MD5s in the CRAM headers; use bin/cram_reference_info.sh to see
+# which reference a CRAM records). ONE file, two modes:
+#   login node:  bash hpc/build_cram_cache.lsf /path/reference.fa [/path/one.cram ...]   -> submits itself
+#   inside LSF:  prepare_cram_cache.sh --fasta ... --cache <restore dest>/cram_ref_cache [--cram ...]  (preflights the CRAMs given)
+# Afterwards hpc/ampsuite_cohort.lsf finds the cache automatically (CRAM_CACHE=DIR to use another location).
+set -euo pipefail
+AMPSUITE_ROOT="${AMPSUITE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+# shellcheck disable=SC1091
+source "$AMPSUITE_ROOT/hpc/sheet_lib.sh"
+if [[ -z "${LSB_JOBID:-}" ]]; then
+  FASTA="${1:-${FASTA:-}}"; shift || true; CRAMS="${CRAMS:-$*}"
+  [[ -n "$FASTA" && -f "$FASTA" ]] || { echo "usage: bash $0 /path/reference.fa [/path/one.cram ...]" >&2; exit 1; }
+  FASTA="$(realpath "$FASTA")"; CRAM_CACHE="${CRAM_CACHE:-$AMPSUITE_ROOT/cram_ref_cache}"; mkdir -p "$AMPSUITE_ROOT/logs"
+  echo "reference: $FASTA ($(du -h "$FASTA" | cut -f1)) -> cache $CRAM_CACHE; CRAMs to preflight: ${CRAMS:-none}"
+  CRAMS_COLON="$(printf '%s' "$CRAMS" | tr ' ' ':')"
+  cd "$AMPSUITE_ROOT"; export FASTA CRAMS_COLON CRAM_CACHE AMPSUITE_ROOT
+  lsf_submit "${QUEUE:-short}" "${WALLTIME:-4:00}" "$(lsf_env FASTA CRAM_CACHE AMPSUITE_ROOT CRAMS_COLON)" "${BASH_SOURCE[0]}"; exit 0
+fi
+type module >/dev/null 2>&1 && module load singularity/4.1.1
+# shellcheck disable=SC1091
+source "$AMPSUITE_ROOT/env_controlled.sh"
+: "${FASTA:?}"; CRAM_CACHE="${CRAM_CACHE:-$AMPSUITE_ROOT/cram_ref_cache}"
+args=(--fasta "$FASTA" --cache "$CRAM_CACHE"); IFS=':' read -r -a crams <<< "${CRAMS_COLON:-}"; for c in "${crams[@]}"; do [[ -n "$c" ]] && args+=(--cram "$c"); done
+prepare_cram_cache.sh "${args[@]}"
+echo "[$(date)] cache ready: $CRAM_CACHE ($(find "$CRAM_CACHE" -type f | wc -l) sequences). Cohort runs will use it automatically."

@@ -94,12 +94,22 @@ run_ampsuite.sh -s SAMPLE -t 16 --bam /path/SAMPLE-T.redux.bam --cnv_bed /path/S
 ```
 Note that PURPLE CN is purity-adjusted while CNVkit's is not, so low-purity samples seed more aggressively this way.
 
-### CRAM input
-See the add-on repository `ampliconsuite-offline-cram-addon`. In short: build the reference cache once from the local
-FASTA the CRAMs were aligned to (`prepare_cram_cache.sh --fasta ... --cache $AMPSUITE_ROOT/cram_ref_cache`), export
-`REF_CACHE="$AMPSUITE_ROOT/cram_ref_cache/%2s/%2s/%s"`, then pass the `.cram` to `--bam` as usual. Decoding CRAM makes the
-CNVkit and seed-filtering stages several times slower than with BAM (measured 15 min vs 4 min on the GBM39 test), so use
-BAMs when both exist.
+### CRAM input (single sample or whole cohort)
+CRAMs store no reference bases; the image decodes them from an htslib reference cache built once from the exact FASTA
+the CRAMs were aligned to (no network needed). Three steps:
+```bash
+cd /path/ampliconsuite && source env_controlled.sh
+cram_reference_info.sh /path/one.cram                       # 1. which reference does the CRAM record (UR/M5 tags, contig count)?
+bash hpc/build_cram_cache.lsf /path/that_reference.fa /path/one.cram   # 2. one job (~3 GB, minutes): builds cram_ref_cache/ and preflights the CRAM
+cram_reference_info.sh /path/one.cram $AMPSUITE_ROOT/cram_ref_cache     #    -> must say "complete"
+bash hpc/ampsuite_cohort.lsf /path/sample_sheet.tsv          # 3. same cohort script; .cram paths (columns may be named Tumour_CRAM/Normal_CRAM)
+```
+The cohort script refuses to submit CRAM rows until the cache exists (`CRAM_CACHE=DIR` for another location) and passes
+it to every job; `run_ampsuite.sh --bam x.cram` works the same way for single samples once `REF_CACHE` is exported
+(`env_controlled.sh` has the line to uncomment). Decoding CRAM makes the CNVkit and seed-filtering stages several times
+slower than BAM (15 min vs 4 min on the GBM39 test), so keep the `medium` queue and use BAMs when both exist. The
+reference must contain every sequence named in the CRAM header (decoys/HLA/alt included); the preflight in step 2 and
+the "complete" check catch a mismatch before any job runs.
 
 ## Licences (research use)
 See `LICENSES/README.md`. AmpliconSuite-pipeline, AmpliconClassifier (BSD-2) and BFBArchitect (BSD-3) are permissive.

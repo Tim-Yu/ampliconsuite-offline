@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # sheet_lib.sh - parse the cohort sample sheet used in the GEL project:
-#   header line with columns PatientID, TumourID, Tumour_BAM, Normal_BAM (any order; Normal_BAM optional;
+#   header line with columns PatientID, TumourID, Tumour_BAM, Normal_BAM (any order; Normal_BAM optional; the BAM columns may
+#   also be named Tumour_CRAM / Normal_CRAM and hold .cram paths;
 #   optional extra column PurpleID when the PURPLE sample name differs from TumourID), tab- or comma-separated,
 #   Windows line endings tolerated, '#' lines and blank lines ignored.
 # sheet_rows FILE   -> one normalised TSV row per sample: TumourID  Tumour_BAM  Normal_BAM  PatientID  PurpleID
@@ -12,7 +13,9 @@ sheet_rows() {
     NR==1 {
       gsub(/\r/, ""); sep = ($0 ~ /\t/) ? "\t" : ","; n = split($0, h, sep)
       for (i = 1; i <= n; i++) { gsub(/^[ "]+|[ "]+$/, "", h[i]); idx[h[i]] = i }
-      if (!("TumourID" in idx) || !("Tumour_BAM" in idx)) { print "ERROR: sheet header must contain TumourID and Tumour_BAM (found: " $0 ")" > "/dev/stderr"; exit 2 }
+      if (!("Tumour_BAM" in idx) && ("Tumour_CRAM" in idx)) idx["Tumour_BAM"] = idx["Tumour_CRAM"]   # CRAM sheets: same columns, .cram paths
+      if (!("Normal_BAM" in idx) && ("Normal_CRAM" in idx)) idx["Normal_BAM"] = idx["Normal_CRAM"]
+      if (!("TumourID" in idx) || !("Tumour_BAM" in idx)) { print "ERROR: sheet header must contain TumourID and Tumour_BAM (or Tumour_CRAM) (found: " $0 ")" > "/dev/stderr"; exit 2 }
       next }
     { gsub(/\r/, ""); if ($0 ~ /^[ \t]*(#|$)/) next
       n = split($0, f, sep); for (i = 1; i <= n; i++) gsub(/^[ "]+|[ "]+$/, "", f[i])

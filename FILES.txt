@@ -4,6 +4,7 @@ LICENSES/LICENSE-AmpliconSuite-pipeline.txt
 LICENSES/LICENSE-BFBArchitect.txt
 LICENSES/README.md
 README.md
+bin/cram_reference_info.sh
 bin/prepare_cram_cache.sh
 bin/purple_to_aa_bed.sh
 bin/run_ampsuite.sh
@@ -11,6 +12,7 @@ docs/README_CONTROLLED_ENV.md
 docs/VERSIONS.txt
 hpc/ampsuite_cohort.lsf
 hpc/ampsuite_cohort_classify.lsf
+hpc/build_cram_cache.lsf
 hpc/restore_only.lsf
 hpc/sample_sheet.example.tsv
 hpc/sheet_lib.sh
